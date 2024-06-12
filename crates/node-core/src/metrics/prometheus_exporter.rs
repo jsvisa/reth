@@ -66,20 +66,10 @@ async fn start_endpoint<F: Hook + 'static>(
 
     task_executor.spawn_with_graceful_shutdown_signal(|signal| async move {
         let mut shutdown = signal.ignore_guard();
-        loop {
-            let io = tokio::select! {
-                res = listener.accept() => match res {
-                    Ok((stream, _remote_addr)) => stream,
-                    Err(err) => {
-                        tracing::error!(%err, "failed to accept connection");
-                        continue;
-                    }
-                },
-                _ = &mut shutdown => break,
-            };
-
+        while let Ok((stream, _remote_addr)) = listener.accept().await {
             let handle = handle.clone();
             let hook = hook.clone();
+
             let service = tower::service_fn(move |_| {
                 (hook)();
                 let metrics = handle.render();
@@ -87,9 +77,10 @@ async fn start_endpoint<F: Hook + 'static>(
             });
 
             if let Err(error) =
-                jsonrpsee::server::serve_with_graceful_shutdown(io, service, &mut shutdown).await
+                jsonrpsee::server::serve_with_graceful_shutdown(stream, service, &mut shutdown)
+                    .await
             {
-                tracing::error!(%error, "metrics endpoint crashed")
+                tracing::error!(%error, "metrics endpoint crashed");
             }
         }
     });
