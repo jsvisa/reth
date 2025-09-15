@@ -660,6 +660,9 @@ ethereum_ssz_derive = "0.9.0"
 # allocators
 tikv-jemalloc-ctl = "0.6"
 tikv-jemallocator = "0.6"
+
+# profiling
+pprof = { version = "0.13", features = ["protobuf-codec", "frame-pointer"] }
 tracy-client = "0.18.0"
 snmalloc-rs = { version = "0.3.7", features = ["build_cc"] }
 

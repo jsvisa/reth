@@ -39,35 +39,47 @@ where
     type Block = PrimitiveBlock;
 
     async fn subscribe_blocks(&self, tx: Sender<Self::Block>) {
-        let mut stream = match self.provider.subscribe_blocks().await {
-            Ok(sub) => sub.into_stream(),
-            Err(err) => {
-                warn!(
-                    target: "consensus::debug-client",
-                    %err,
-                    url=%self.url,
-                    "Failed to subscribe to blocks",
-                );
-                return;
-            }
-        };
-        while let Some(header) = stream.next().await {
-            match self.get_block(header.number()).await {
-                Ok(block) => {
-                    if tx.send(block).await.is_err() {
-                        // Channel closed.
-                        break;
-                    }
-                }
+        loop {
+            let mut stream = match self.provider.subscribe_blocks().await {
+                Ok(sub) => sub.into_stream(),
                 Err(err) => {
                     warn!(
                         target: "consensus::debug-client",
                         %err,
                         url=%self.url,
-                        "Failed to fetch a block",
+                        "Failed to subscribe to blocks, retrying in 5 seconds...",
                     );
+                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+                    continue;
+                }
+            };
+
+            while let Some(header) = stream.next().await {
+                match self.get_block(header.number()).await {
+                    Ok(block) => {
+                        if tx.send(block).await.is_err() {
+                            // Channel closed.
+                            return;
+                        }
+                    }
+                    Err(err) => {
+                        warn!(
+                            target: "consensus::debug-client",
+                            %err,
+                            url=%self.url,
+                            "Failed to fetch a block",
+                        );
+                    }
                 }
             }
+
+            // If we reach here, the stream ended (connection lost)
+            warn!(
+                target: "consensus::debug-client",
+                url=%self.url,
+                "Block subscription stream ended, reconnecting in 5 seconds...",
+            );
+            tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
         }
     }
 

@@ -61,6 +61,7 @@ use reth_node_core::{
 use reth_node_metrics::{
     chain::ChainSpecInfo,
     hooks::Hooks,
+    pprof::{PprofServer, PprofServerConfig},
     recorder::install_prometheus_recorder,
     server::{MetricServer, MetricServerConfig},
     version::VersionInfo,
@@ -578,6 +579,12 @@ where
         Ok(self)
     }
 
+    /// Convenience function to [`Self::start_pprof_endpoint`]
+    pub async fn with_pprof_server(self) -> eyre::Result<Self> {
+        self.start_pprof_endpoint().await?;
+        Ok(self)
+    }
+
     /// Starts the prometheus endpoint.
     pub async fn start_prometheus_endpoint(&self) -> eyre::Result<()> {
         // ensure recorder runs upkeep periodically
@@ -615,6 +622,19 @@ where
             );
 
             MetricServer::new(config).serve().await?;
+        }
+
+        Ok(())
+    }
+
+    /// Starts the pprof endpoint.
+    pub async fn start_pprof_endpoint(&self) -> eyre::Result<()> {
+        let listen_addr = self.node_config().pprof;
+        if let Some(addr) = listen_addr {
+            info!(target: "reth::cli", "Starting pprof endpoint at {}", addr);
+            let config = PprofServerConfig::new(addr, self.task_executor().clone());
+
+            PprofServer::new(config).serve().await?;
         }
 
         Ok(())

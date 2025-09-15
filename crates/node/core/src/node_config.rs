@@ -108,6 +108,11 @@ pub struct NodeConfig<ChainSpec> {
     /// The metrics will be served at the given interface and port.
     pub metrics: Option<SocketAddr>,
 
+    /// Enable pprof profiling endpoint.
+    ///
+    /// The pprof endpoint will be served at the given interface and port.
+    pub pprof: Option<SocketAddr>,
+
     /// Add a new instance of a node.
     ///
     /// Configures the ports of the node to avoid conflicts with the defaults.
@@ -172,6 +177,7 @@ impl<ChainSpec> NodeConfig<ChainSpec> {
             config: None,
             chain,
             metrics: None,
+            pprof: None,
             instance: None,
             network: NetworkArgs::default(),
             rpc: RpcServerArgs::default(),
@@ -227,6 +233,12 @@ impl<ChainSpec> NodeConfig<ChainSpec> {
     /// Set the metrics address for the node
     pub const fn with_metrics(mut self, metrics: SocketAddr) -> Self {
         self.metrics = Some(metrics);
+        self
+    }
+
+    /// Set the pprof address for the node
+    pub const fn with_pprof(mut self, pprof: SocketAddr) -> Self {
+        self.pprof = Some(pprof);
         self
     }
 
@@ -479,6 +491,7 @@ impl<ChainSpec> NodeConfig<ChainSpec> {
             datadir: self.datadir,
             config: self.config,
             metrics: self.metrics,
+            pprof: self.pprof,
             instance: self.instance,
             network: self.network,
             rpc: self.rpc,
@@ -518,6 +531,7 @@ impl<ChainSpec> Clone for NodeConfig<ChainSpec> {
             chain: self.chain.clone(),
             config: self.config.clone(),
             metrics: self.metrics,
+            pprof: self.pprof,
             instance: self.instance,
             network: self.network.clone(),
             rpc: self.rpc.clone(),

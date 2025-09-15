@@ -108,6 +108,7 @@ where
                 info!(target: "reth::cli", "Database opened");
             })
             .with_prometheus_server().await?
+            .with_pprof_server().await?
             .inspect(|this| {
                 debug!(target: "reth::cli", chain=%this.chain_id(), genesis=?this.genesis_hash(), "Initializing genesis");
             })

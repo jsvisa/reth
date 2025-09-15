@@ -45,6 +45,12 @@ pub struct NodeCommand<C: ChainSpecParser, Ext: clap::Args + fmt::Debug = NoArgs
     #[arg(long, value_name = "SOCKET", value_parser = parse_socket_address, help_heading = "Metrics")]
     pub metrics: Option<SocketAddr>,
 
+    /// Enable pprof profiling endpoint.
+    ///
+    /// The pprof endpoint will be served at the given interface and port.
+    #[arg(long, value_name = "SOCKET", value_parser = parse_socket_address, help_heading = "Metrics")]
+    pub pprof: Option<SocketAddr>,
+
     /// Add a new instance of a node.
     ///
     /// Configures the ports of the node to avoid conflicts with the defaults.
@@ -155,6 +161,7 @@ where
             config,
             chain,
             metrics,
+            pprof,
             instance,
             with_unused_ports,
             network,
@@ -176,6 +183,7 @@ where
             config,
             chain,
             metrics,
+            pprof,
             instance,
             network,
             rpc,
